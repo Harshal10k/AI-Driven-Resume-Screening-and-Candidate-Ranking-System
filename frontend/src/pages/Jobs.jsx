@@ -2,7 +2,6 @@ import { useState } from "react";
 import MainLayout from "../layouts/MainLayout";
 import JobModal from "../components/JobModal";
 import { useJobs } from "../context/JobsContext";
-import { candidates } from "../data/candidates";
 
 const Jobs = () => {
   const { jobs, setJobs } = useJobs();
@@ -25,11 +24,16 @@ const Jobs = () => {
   };
 
   const deleteJob = (id) => {
-    setJobs(jobs.filter((job) => job.id !== id));
+    setJobs(
+      jobs.filter(
+        (job) => job.id !== id
+      )
+    );
   };
 
   return (
     <MainLayout>
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">
@@ -43,128 +47,148 @@ const Jobs = () => {
 
       {/* Top Section */}
       <div className="flex justify-between items-center mb-6">
+
         <h2 className="text-xl font-semibold">
           Active Jobs
         </h2>
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() =>
+            setShowModal(true)
+          }
           className="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition"
         >
           + Create Job
         </button>
+
       </div>
 
       {/* Jobs List */}
-      {/* Jobs List */}
-<div className="grid gap-4">
+      <div className="grid gap-4">
 
-  {jobs.map((job) => {
+        {jobs.length === 0 ? (
 
-    const applicantsCount = candidates.filter(
-      (candidate) => candidate.jobTitle === job.title
-    ).length;
+          <div className="bg-white rounded-2xl p-10 border text-center">
 
-    const shortlistedCount = candidates.filter(
-      (candidate) =>
-        candidate.jobTitle === job.title &&
-        candidate.status === "Shortlisted"
-    ).length;
-
-    return (
-      <div
-        key={job.id}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
-      >
-
-        {/* Top Row */}
-        <div className="flex justify-between">
-
-          <div>
-
-            <h3 className="text-xl font-semibold">
-              {job.title}
+            <h3 className="text-xl font-semibold text-slate-600">
+              No Jobs Available
             </h3>
 
-            <p className="text-slate-500">
-              {job.department}
+            <p className="text-slate-500 mt-2">
+              Create your first job posting
             </p>
 
-            {job.experience || job.skills ? (
-              <div className="mt-3 text-sm text-slate-600">
+          </div>
 
-                {job.experience && (
-                  <p>
-                    Experience: {job.experience}
-                  </p>
-                )}
+        ) : (
 
-                {job.skills && (
-                  <p>
-                    Skills: {job.skills}
+          jobs.map((job) => (
+
+            <div
+              key={job.id}
+              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200"
+            >
+
+              {/* Top Row */}
+              <div className="flex justify-between">
+
+                <div>
+
+                  <h3 className="text-xl font-semibold">
+                    {job.title}
+                  </h3>
+
+                  <p className="text-slate-500">
+                    {job.department}
                   </p>
-                )}
+
+                  {(job.experience || job.skills) && (
+
+                    <div className="mt-3 text-sm text-slate-600">
+
+                      {job.experience && (
+                        <p>
+                          Experience: {job.experience}
+                        </p>
+                      )}
+
+                      {job.skills && (
+                        <p>
+                          Skills: {job.skills}
+                        </p>
+                      )}
+
+                    </div>
+
+                  )}
+
+                </div>
+
+                <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm h-fit">
+                  {job.status}
+                </span>
 
               </div>
-            ) : null}
 
-          </div>
+              {/* Stats */}
+              <div className="mt-4 flex gap-10">
 
-          <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm h-fit">
-            {job.status}
-          </span>
+                <div>
 
-        </div>
+                  <p className="text-slate-500 text-sm">
+                    Applicants
+                  </p>
 
-        {/* Stats */}
-        <div className="mt-4 flex gap-10">
+                  <h4 className="text-2xl font-bold">
+                    {job.applicants || 0}
+                  </h4>
 
-          <div>
-            <p className="text-slate-500 text-sm">
-              Applicants
-            </p>
+                </div>
 
-            <h4 className="text-2xl font-bold">
-              {applicantsCount}
-            </h4>
-          </div>
+                <div>
 
-          <div>
-            <p className="text-slate-500 text-sm">
-              Shortlisted
-            </p>
+                  <p className="text-slate-500 text-sm">
+                    Shortlisted
+                  </p>
 
-            <h4 className="text-2xl font-bold">
-              {shortlistedCount}
-            </h4>
-          </div>
+                  <h4 className="text-2xl font-bold">
+                    {job.shortlisted || 0}
+                  </h4>
 
-        </div>
+                </div>
 
-        {/* Actions */}
-        <div className="mt-5">
+              </div>
 
-          <button
-            onClick={() => deleteJob(job.id)}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition"
-          >
-            Delete
-          </button>
+              {/* Actions */}
+              <div className="mt-5">
 
-        </div>
+                <button
+                  onClick={() =>
+                    deleteJob(job.id)
+                  }
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition"
+                >
+                  Delete
+                </button>
+
+              </div>
+
+            </div>
+
+          ))
+
+        )}
 
       </div>
-    );
-  })}
-
-</div>
 
       {/* Modal */}
       {showModal && (
+
         <JobModal
           setShowModal={setShowModal}
           addJob={addJob}
         />
+
       )}
 
     </MainLayout>

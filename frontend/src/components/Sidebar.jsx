@@ -1,6 +1,5 @@
 import { useJobs } from "../context/JobsContext";
 import { useNavigate } from "react-router-dom";
-import { candidates } from "../data/candidates";
 
 const Sidebar = () => {
   const {
@@ -48,21 +47,11 @@ const Sidebar = () => {
               </h3>
 
               <p className="text-slate-500 text-sm mt-2">
-                {
-                  candidates.filter(
-                    (candidate) => candidate.jobTitle === job.title
-                  ).length
-                } applicants
+                {job.applicants || 0} applicants
               </p>
 
               <p className="text-green-600 text-sm">
-                {
-                  candidates.filter(
-                    (candidate) =>
-                      candidate.jobTitle === job.title &&
-                      candidate.status === "Shortlisted"
-                  ).length
-                } shortlisted
+                {job.shortlisted || 0} shortlisted
               </p>
 
             </div>

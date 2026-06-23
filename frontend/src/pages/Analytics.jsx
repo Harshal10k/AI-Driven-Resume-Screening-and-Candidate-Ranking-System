@@ -1,5 +1,4 @@
 import MainLayout from "../layouts/MainLayout";
-import { candidates } from "../data/candidates";
 import {
   BarChart,
   Bar,
@@ -11,72 +10,20 @@ import {
 
 const Analytics = () => {
 
-  // Stats
-  const totalApplicants = candidates.length;
+  // Temporary Data
+  const totalApplicants = 0;
+  const shortlisted = 0;
+  const rejected = 0;
+  const averageScore = 0;
 
-  const shortlisted = candidates.filter(
-    (c) => c.status === "Shortlisted"
-  ).length;
-
-  const rejected = candidates.filter(
-    (c) => c.status === "Rejected"
-  ).length;
-
-  const averageScore =
-    totalApplicants > 0
-      ? Math.round(
-          candidates.reduce(
-            (sum, c) => sum + c.score,
-            0
-          ) / totalApplicants
-        )
-      : 0;
-
-  // Score Distribution
   const scoreData = [
-    {
-      range: "90-100",
-      count: candidates.filter(
-        (c) => c.score >= 90
-      ).length,
-    },
-    {
-      range: "80-89",
-      count: candidates.filter(
-        (c) => c.score >= 80 && c.score < 90
-      ).length,
-    },
-    {
-      range: "70-79",
-      count: candidates.filter(
-        (c) => c.score >= 70 && c.score < 80
-      ).length,
-    },
-    {
-      range: "60-69",
-      count: candidates.filter(
-        (c) => c.score >= 60 && c.score < 70
-      ).length,
-    },
+    { range: "90-100", count: 0 },
+    { range: "80-89", count: 0 },
+    { range: "70-79", count: 0 },
+    { range: "60-69", count: 0 },
   ];
 
-  // Skills Analysis
-  const skillCounts = {};
-
-  candidates.forEach((candidate) => {
-    candidate.skills.forEach((skill) => {
-      skillCounts[skill] =
-        (skillCounts[skill] || 0) + 1;
-    });
-  });
-
-  const skillData = Object.entries(skillCounts)
-    .map(([skill, count]) => ({
-      skill,
-      count,
-    }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+  const skillData = [];
 
   return (
     <MainLayout>

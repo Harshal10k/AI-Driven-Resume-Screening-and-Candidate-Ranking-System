@@ -2,7 +2,6 @@ import MainLayout from "../layouts/MainLayout";
 import FilterBar from "../components/FilterBar";
 import CandidateCard from "../components/CandidateCard";
 import StatsCard from "../components/StatsCard";
-import { candidates } from "../data/candidates";
 import { useState } from "react";
 import { useJobs } from "../context/JobsContext";
 
@@ -11,6 +10,9 @@ const Dashboard = () => {
 
   const [sortBy, setSortBy] = useState("score");
   const [filterStatus, setFilterStatus] = useState("All");
+
+  // Temporary until Candidate API is connected
+  const candidates = [];
 
   // Sort Candidates
   const sortedCandidates = [...candidates].sort((a, b) => {
@@ -76,12 +78,9 @@ const Dashboard = () => {
 
   return (
     <MainLayout>
-
       {/* Header */}
       <div className="flex justify-between items-start mb-8">
-
         <div>
-
           <h1 className="text-4xl font-bold">
             AI Resume Screening
           </h1>
@@ -89,30 +88,21 @@ const Dashboard = () => {
           <p className="text-slate-500 mt-2">
             Review and rank candidates using AI
           </p>
-
         </div>
 
         <div className="flex gap-3">
-
-          <button
-            className="bg-white border border-slate-300 px-5 py-3 rounded-xl shadow-sm hover:bg-slate-50 transition"
-          >
+          <button className="bg-white border border-slate-300 px-5 py-3 rounded-xl shadow-sm hover:bg-slate-50 transition">
             Export Shortlist
           </button>
 
-          <button
-            className="bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-sm hover:bg-indigo-700 transition"
-          >
+          <button className="bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-sm hover:bg-indigo-700 transition">
             Re-run AI Screen
           </button>
-
         </div>
-
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-
         <StatsCard
           title="Applicants"
           value={totalCandidates}
@@ -133,29 +123,22 @@ const Dashboard = () => {
 
         <StatsCard
           title="Bias Flags"
-          value="2"
+          value="0"
           subtitle="Need Review"
         />
-
       </div>
 
       {/* Candidate Section Header */}
       <div className="mb-5">
-
         <h2 className="text-2xl font-bold">
-
           {selectedJob === "All Jobs"
             ? "Candidate Rankings"
             : `${selectedJob} - Ranked Candidates`}
-
         </h2>
 
         <p className="text-slate-500 mt-1">
-
           AI scored {jobFilteredCandidates.length} resumes · Ranked by overall fit
-
         </p>
-
       </div>
 
       {/* Filter Bar */}
@@ -171,26 +154,35 @@ const Dashboard = () => {
 
       {/* Candidate Cards */}
       <div className="space-y-4">
+        {jobFilteredCandidates.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center border">
+            <h3 className="text-xl font-semibold text-slate-600">
+              No Candidates Yet
+            </h3>
 
-        {jobFilteredCandidates.map((candidate, index) => (
-          <CandidateCard
-            key={candidate.id}
-            rank={index + 1}
-            name={candidate.name}
-            role={candidate.role}
-            score={candidate.score}
-            skills={candidate.skills}
-            experience={candidate.experience}
-            education={candidate.education}
-            status={candidate.status}
-            reason={candidate.reason}
-            confidence={candidate.confidence}
-            resume={candidate.resume}
-          />
-        ))}
-
+            <p className="text-slate-500 mt-2">
+              Upload resumes to start AI screening
+            </p>
+          </div>
+        ) : (
+          jobFilteredCandidates.map((candidate, index) => (
+            <CandidateCard
+              key={candidate.id}
+              rank={index + 1}
+              name={candidate.name}
+              role={candidate.role}
+              score={candidate.score}
+              skills={candidate.skills}
+              experience={candidate.experience}
+              education={candidate.education}
+              status={candidate.status}
+              reason={candidate.reason}
+              confidence={candidate.confidence}
+              resume={candidate.resume}
+            />
+          ))
+        )}
       </div>
-
     </MainLayout>
   );
 };
