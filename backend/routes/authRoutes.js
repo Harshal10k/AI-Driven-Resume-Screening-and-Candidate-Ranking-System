@@ -3,9 +3,9 @@ import { body } from 'express-validator';
 import { registerUser, loginUser } from "../controllers/authController.js";
 import validateRequest from '../middleware/validateRequest.js';
 
-const router = express.Router();
+const authRouter = express.Router();
 
-router.post(
+authRouter.post(
     '/register',
     [
         body('name', 'Name is required').not().isEmpty(),
@@ -17,7 +17,7 @@ router.post(
     registerUser
 );
 
-router.post(
+authRouter.post(
     '/login',
     [
         body('email', 'Please include a valid email').isEmail(),
@@ -28,4 +28,4 @@ router.post(
 );
 
 
-export default router;
+export default authRouter;
