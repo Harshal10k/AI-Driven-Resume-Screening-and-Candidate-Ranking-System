@@ -5,7 +5,8 @@ import Job from "../models/Job.js";
 import Resume from "../models/Resume.js";
 import { extractText } from "../services/pdfService.js";
 import { rankResumesForJob } from "../services/rankingService.js";
-import { scoreResume } from "../services/geminiService.js"
+import { scoreResume } from "../services/geminiService.js";
+import { sendStatusEmail } from "../services/emailService.js";
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -28,6 +29,15 @@ const cleanupFiles = (files = []) => {
         }
     }
 };
+
+// Basic email format check — used to avoid comparing junk/empty extracted
+// email values against the authenticated candidate's real email.
+const isValidEmail = (value) => {
+    if (!value || typeof value !== "string") return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+};
+
+
 
 // ── POST /api/resumes/upload/:jobId ──────────────────────────────────────────
 // Access: Private — Employer only
@@ -196,6 +206,8 @@ export const uploadResumes = async (req, res) => {
     });
 };
 
+
+
 // ── GET /api/resumes/:jobId ───────────────────────────────────────────────────
 // Returns all resumes for a job, sorted by rank (then by upload date for unscored)
 // Access: Private — Employer only
@@ -245,11 +257,149 @@ export const updateCandidateStatus = async (req, res) => {
             return res.status(403).json({ success: false, message: "Unauthorized access." });
         }
 
+        const statusChanged = resume.candidate_status !== status;
         resume.candidate_status = status;
 
         const updated = await resume.save();
 
+        // Fire-and-forget: only notify on an actual transition to
+        // shortlisted/rejected, never on redundant PATCHes or reverts to pending.
+        if (statusChanged && (status === "shortlisted" || status === "rejected")) {
+            const job = await Job.findById(resume.job_id).select("title company");
+            sendStatusEmail({
+                status,
+                candidateEmail: resume.email,
+                candidateName: resume.candidate_name,
+                jobTitle: job.title || "the role",
+                companyName: job.company || "",
+            }); // not awaited — response doesn't wait on email delivery
+        }
         return res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+// ── GET /api/resumes/export/:jobId ────────────────────────────────────────
+// Streams a CSV of all shortlisted candidates for a job (FR-29)
+// Access: Private — Employer only
+export const exportShortlist = async (req, res) => {
+    try {
+        const { jobId } = req.params;
+
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({ success: false, message: "Job not found." });
+        }
+        if (job.employer_id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: "Unauthorized access." });
+        }
+
+        const resumes = await Resume.find({
+            job_id: jobId,
+            candidate_status: "shortlisted",
+        })
+            .select("-raw_text -gemini_response")
+            .sort({ rank: 1 });
+
+        // ── CSV column definitions ──────────────────────────────────────────
+        const headers = [
+            "Rank",
+            "Candidate Name",
+            "Email",
+            "Match Score",
+            "Experience (Years)",
+            "Education",
+            "Matched Skills",
+            "Missing Skills",
+            "Organizations",
+            "Explanation",
+            "Bias Flags",
+            "Original Filename",
+        ];
+
+        // Escape a single CSV field: wrap in quotes if it contains a comma,
+        // quote, or newline; double any internal quotes.
+        const escapeCsv = (value) => {
+            const str = value === null || value === undefined ? "" : String(value);
+            if (/[",\n]/.test(str)) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        };
+
+        const rows = resumes.map((r) => [
+            r.rank ?? "",
+            r.candidate_name || "",
+            r.email || "",
+            r.match_score ?? "",
+            r.experience_years ?? "",
+            r.education || "",
+            (r.matched_skills || []).join("; "),
+            (r.missing_skills || []).join("; "),
+            (r.organizations || []).join("; "),
+            r.explanation || "",
+            (r.bias_flags || []).join("; "),
+            r.original_name || "",
+        ]);
+
+        // AC-07 requires: empty CSV with headers only if no shortlisted candidates
+        const csvLines = [headers, ...rows].map((row) => row.map(escapeCsv).join(","));
+        const csvContent = csvLines.join("\r\n");
+
+        const safeJobTitle = (job.title || "job").replace(/[^a-z0-9]/gi, "_").toLowerCase();
+        const filename = `shortlist_${safeJobTitle}_${jobId}.csv`;
+
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        return res.status(200).send(csvContent);
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+// ── GET /api/resumes/candidate ────────────────────────────────────────────
+// Returns all resumes matching the authenticated candidate's email address.
+// Matching is best-effort: it relies on Gemini having correctly extracted an
+// email from the resume text, so results may be incomplete (FR-30 / Candidate
+// read-only dashboard, Option A scope).
+// Access: Private — Candidate only
+export const getResumesByCandidate = async (req, res) => {
+    try {
+        const candidateEmail = req.user.email?.trim().toLowerCase();
+
+        if (!isValidEmail(candidateEmail)) {
+            // Shouldn't happen — registration requires a valid email — but
+            // guard against it rather than running a query that could
+            // accidentally match other empty-email resumes.
+            return res.status(400).json({
+                success: false,
+                message: "Your account email is invalid or missing.",
+            });
+        }
+
+        // MongoDB-side case-insensitive exact match. $regex with anchors
+        // avoids matching partial/substring emails.
+        const resumes = await Resume.find({
+            email: {
+                $regex: `^${candidateEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+                $options: "i",
+            },
+        })
+            .select("-raw_text -gemini_response -employer_id -file_path")
+            .populate("job_id", "title company")
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            count: resumes.length,
+            data: resumes,
+            note: resumes.length === 0
+                ? "No matching applications found. This may be because the email on your resume differs from your account email."
+                : undefined,
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }

@@ -6,6 +6,8 @@ import {
     uploadResumes,
     getResumesByJob,
     updateCandidateStatus,
+    exportShortlist,
+    getResumesByCandidate,
 } from "../controllers/resumeController.js";
 import validateRequest from "../middleware/validateRequest.js";
 
@@ -55,5 +57,7 @@ resumeRouter.patch(
     updateCandidateStatus
 );
 
+// GET /api/resumes/export/:jobId — download CSV of shortlisted candidates
+resumeRouter.get("/export/:jobId", authorizeRoles("employer"), exportShortlist);
 
 export default resumeRouter;
