@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import router from './routes/authRoutes.js';
+import jobRouter from './routes/Jobroutes.js';
 
 dotenv.config();
 connectDB();
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', router);
+app.use('/api/jobs', jobRouter);
 
 app.get('/', (req, res) => {
     res.send('API is running...');
