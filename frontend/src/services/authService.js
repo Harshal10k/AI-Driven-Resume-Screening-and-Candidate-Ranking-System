@@ -19,3 +19,24 @@ export const loginUser = async (userData) => {
 
   return response.data;
 };
+
+export const updateProfile = async (
+  userData
+) => {
+
+  const token =
+    localStorage.getItem("token");
+
+  const response = await axios.put(
+    `${API_URL}/profile`,
+    userData,
+    {
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+};
