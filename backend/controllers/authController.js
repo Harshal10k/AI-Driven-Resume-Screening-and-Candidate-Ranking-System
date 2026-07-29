@@ -67,3 +67,51 @@ export const loginUser = async (req, res) => {
         return res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      company,
+      department,
+    } = req.body;
+    const updatedUser =
+      await User.findByIdAndUpdate(
+        req.userId,
+        {
+          name,
+          email,
+          company,
+          department,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Profile Updated Successfully",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        company: updatedUser.company,
+        department: updatedUser.department,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
