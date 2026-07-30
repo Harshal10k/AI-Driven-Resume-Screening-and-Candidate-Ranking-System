@@ -51,13 +51,7 @@ const Login = () => {
 
       login(response.user, response.token);
 
-      if (response.user.role === "admin") {
-
-        navigate("/admin");
-
-      }
-
-      else if (response.user.role === "employer") {
+      if (response.user.role === "employer") {
 
         navigate("/dashboard");
 
@@ -412,12 +406,6 @@ const Login = () => {
               <option value="employer">
 
                 💼 Employer
-
-              </option>
-
-              <option value="admin">
-
-                🛡️ Administrator
 
               </option>
 

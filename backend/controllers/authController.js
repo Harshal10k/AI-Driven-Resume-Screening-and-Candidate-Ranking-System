@@ -41,7 +41,7 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
 
         const user = await User.findOne({ email });
 
@@ -53,6 +53,14 @@ export const loginUser = async (req, res) => {
 
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        if (user.role !== role) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Selected role does not match account role",
+          });
         }
 
         return res.status(200).json({

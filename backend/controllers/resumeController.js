@@ -318,8 +318,9 @@ export const updateCandidateStatus = async (req, res) => {
 // ── GET /api/resumes/export/:jobId ────────────────────────────────────────
 // Streams a CSV of all shortlisted candidates for a job (FR-29)
 // Access: Private — Employer only
-export const exportShortlistedCandidates = async (req, res) => {
+export const exportShortlist = async (req, res) => {
     try {
+        
         const { jobId } = req.params;
 
         const job = await Job.findById(jobId);
