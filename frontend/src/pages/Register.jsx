@@ -39,6 +39,11 @@ const Register = () => {
 
     e.preventDefault();
 
+    if (formData.password.length < 8) {
+      alert("Password must be at least 8 characters long.");
+      return;
+    }
+
     try {
 
       setLoading(true);
@@ -331,7 +336,7 @@ const Register = () => {
 
           </div>
 
-                    {/* Password */}
+          {/* Password */}
 
           <div className="mb-4">
 
@@ -366,6 +371,7 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Create a password"
+                minLength={8}
                 required
                 className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-12 pr-4 transition duration-300 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-100"
               />
@@ -481,7 +487,7 @@ const Register = () => {
 
           </button>
 
-                    {/* Divider */}
+          {/* Divider */}
 
           <div className="my-6 flex items-center">
 

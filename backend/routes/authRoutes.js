@@ -1,7 +1,8 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { registerUser, loginUser } from "../controllers/authController.js";
+import { registerUser, loginUser, updateProfile } from "../controllers/authController.js";
 import validateRequest from '../middleware/validateRequest.js';
+import { protect } from "../middleware/authMiddleware.js";
 
 const authRouter = express.Router();
 
@@ -25,6 +26,32 @@ authRouter.post(
     ],
     validateRequest,
     loginUser
+);
+
+authRouter.put(
+    "/profile",
+    protect,
+    [
+        body("name")
+            .notEmpty()
+            .withMessage("Name is required"),
+
+        body("email")
+            .isEmail()
+            .withMessage("Please include a valid email"),
+
+        body("company")
+            .optional()
+            .notEmpty()
+            .withMessage("Company cannot be empty"),
+
+        body("department")
+            .optional()
+            .notEmpty()
+            .withMessage("Department cannot be empty"),
+    ],
+    validateRequest,
+    updateProfile
 );
 
 

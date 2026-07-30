@@ -138,27 +138,23 @@ export const JobsProvider = ({ children }) => {
   // Fetch After Login
   // ==========================
 
-  useEffect(() => {
+  const { user } = useAuth();
 
+  useEffect(() => {
     if (authLoading) return;
 
     if (!token) {
-
       setJobs([]);
-
       setSelectedJob(null);
-
       return;
+    }
 
+    if (user?.role !== "employer") {
+      return;
     }
 
     fetchJobs();
-
-  }, [
-    authLoading,
-    token,
-    fetchJobs,
-  ]);
+  }, [authLoading, token, user, fetchJobs]);
 
   // ==========================
   // Select Job
