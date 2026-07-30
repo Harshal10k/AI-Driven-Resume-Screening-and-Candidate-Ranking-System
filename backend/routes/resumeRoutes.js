@@ -4,10 +4,12 @@ import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import { uploadResumes as multerUpload } from "../middleware/uploadMiddleware.js";
 import {
     uploadResumes,
+    getAllResumes,
     getResumesByJob,
     updateCandidateStatus,
     exportShortlist,
-    getResumesByCandidate,
+    getCandidateApplications,
+    rerunAIScreening,
 } from "../controllers/resumeController.js";
 import validateRequest from "../middleware/validateRequest.js";
 
@@ -41,6 +43,31 @@ resumeRouter.post(
     uploadResumes
 );
 
+// ==============================
+// Candidate Applications
+// GET /api/resumes/candidate/applications
+// ==============================
+
+resumeRouter.get(
+    "/candidate/applications",
+    authorizeRoles("candidate"),
+    getCandidateApplications
+);
+
+// GET /api/resumes/export/:jobId — download CSV of shortlisted candidates
+resumeRouter.get("/export/:jobId", authorizeRoles("employer"), exportShortlist);
+
+// ==============================
+// Get All Ranked Resumes
+// GET /api/resumes
+// ==============================
+
+resumeRouter.get(
+    "/",
+    authorizeRoles("employer"),
+    getAllResumes
+);
+
 // GET /api/resumes/:jobId — ranked candidates for a job
 resumeRouter.get("/:jobId", authorizeRoles("employer"), getResumesByJob);
 
@@ -57,7 +84,16 @@ resumeRouter.patch(
     updateCandidateStatus
 );
 
-// GET /api/resumes/export/:jobId — download CSV of shortlisted candidates
-resumeRouter.get("/export/:jobId", authorizeRoles("employer"), exportShortlist);
+
+// ==============================
+// Re-run AI Screening
+// POST /api/resumes/rescreen/:jobId
+// ==============================
+
+resumeRouter.post(
+    "/rescreen/:jobId",
+    authorizeRoles("employer"),
+    rerunAIScreening
+);
 
 export default resumeRouter;

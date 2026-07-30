@@ -1,4 +1,5 @@
 import Job from "../models/Job.js";
+import Resume from "../models/Resume.js";
 
 //@Route: POST /api/jobs
 //@access: Private (Employer Only)
@@ -30,17 +31,98 @@ export const createJob = async (req, res) => {
 //@route GET /api/jobs
 //@access Private (Employer Only)
 export const getAllJobs = async (req, res) => {
-    try {
-        const jobs = await Job.find({
-            employer_id: req.user._id,
-        }).sort({ createdAt: -1 });
+  try {
+    // ==========================================
+    // Fetch Employer Jobs
+    // ==========================================
 
-        return res.status(200).json({ success: true, data: jobs });
+    const jobs = await Job.find({
+      employer_id: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
 
-    } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
-    }
-}
+    // ==========================================
+    // Fetch Resume Statuses
+    // ==========================================
+
+    const resumes = await Resume.find({
+      employer_id: req.user._id,
+    }).select("job_id candidate_status");
+
+    // ==========================================
+    // Build Summary Map
+    // ==========================================
+
+    const summaryMap = {};
+
+    resumes.forEach((resume) => {
+      const jobId = resume.job_id.toString();
+
+      if (!summaryMap[jobId]) {
+        summaryMap[jobId] = {
+          applicants: 0,
+          shortlisted: 0,
+          pending: 0,
+          rejected: 0,
+        };
+      }
+
+      summaryMap[jobId].applicants++;
+
+      switch (resume.candidate_status) {
+        case "shortlisted":
+          summaryMap[jobId].shortlisted++;
+          break;
+
+        case "pending":
+          summaryMap[jobId].pending++;
+          break;
+
+        case "rejected":
+          summaryMap[jobId].rejected++;
+          break;
+
+        default:
+          break;
+      }
+    });
+
+    // ==========================================
+    // Attach Summary To Every Job
+    // ==========================================
+
+    const jobsWithSummary = jobs.map((job) => {
+      const summary =
+        summaryMap[job._id.toString()] || {
+          applicants: 0,
+          shortlisted: 0,
+          pending: 0,
+          rejected: 0,
+        };
+
+      return {
+        ...job.toObject(),
+        summary,
+      };
+    });
+
+    // ==========================================
+    // Response
+    // ==========================================
+
+    return res.status(200).json({
+      success: true,
+      count: jobsWithSummary.length,
+      data: jobsWithSummary,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 // ==========================================
 // NEW API

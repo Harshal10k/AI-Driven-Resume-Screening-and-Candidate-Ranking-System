@@ -1,12 +1,23 @@
 import express from "express";
 import { body } from "express-validator";
-import { createJob, getAllJobs, getJobById, updateJobStatus, deleteJob } from "../controllers/JobController.js";
+import { createJob, getAllJobs, getJobById, getOpenJobs, updateJob, updateJobStatus, deleteJob } from "../controllers/jobController.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import validateRequest from "../middleware/validateRequest.js";
 
 const jobRouter = express.Router();
 
 jobRouter.use(protect);
+
+// GET OPEN JOBS
+
+jobRouter.get(
+  "/open",
+  authorizeRoles(
+    "candidate",
+    "employer",
+  ),
+  getOpenJobs
+);
 
 jobRouter.post(
     "/",
@@ -28,6 +39,65 @@ jobRouter.get("/", authorizeRoles("employer"), getAllJobs);
 
 //get job by id
 jobRouter.get("/:id", authorizeRoles("employer"), getJobById);
+
+//UPDATE JOB DETAILS
+jobRouter.put(
+  "/:id",
+
+  authorizeRoles("employer"),
+
+  [
+    body("title")
+      .trim()
+      .notEmpty()
+      .withMessage(
+        "Job title is required."
+      ),
+
+    body("company")
+      .trim()
+      .notEmpty()
+      .withMessage(
+        "Company is required."
+      ),
+
+    body("description")
+      .trim()
+      .notEmpty()
+      .withMessage(
+        "Description is required."
+      ),
+
+    body("required_skills")
+      .isArray({
+        min: 1,
+      })
+      .withMessage(
+        "Required skills are required."
+      ),
+
+    body("experience_years")
+      .optional()
+      .isInt({
+        min: 0,
+      })
+      .withMessage(
+        "Experience must be a non-negative number."
+      ),
+
+    body("status")
+      .optional()
+      .isIn([
+        "open",
+        "closed",
+      ])
+      .withMessage(
+        "Status must be open or closed."
+      ),
+  ],
+  validateRequest,
+  updateJob
+);
 
 //Update job status
 jobRouter.patch(
