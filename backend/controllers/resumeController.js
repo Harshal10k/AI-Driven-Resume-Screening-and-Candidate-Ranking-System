@@ -233,6 +233,40 @@ export const getResumesByJob = async (req, res) => {
     }
 };
 
+// ── GET /api/resumes ────────────────────────────────────────────────────────
+// Returns resumes across all jobs belonging to the logged-in employer
+// Access: Private — Employer only
+
+export const getAllResumes = async (req, res) => {
+    try {
+        const resumes = await Resume.find({
+            employer_id: req.user._id,
+        })
+        .populate(
+            "job_id",
+            "title company"
+        )
+        .select(
+            "-raw_text -gemini_response"
+        )
+        .sort({
+            rank: 1,
+            createdAt: -1,
+        });
+        return res.status(200).json({
+            success: true,
+            count: resumes.length,
+            data: resumes,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 // ── PATCH /api/resumes/:id/status ────────────────────────────────────────────
 // Shortlist or reject a candidate (FR-27, FR-28)
 // Access: Private — Employer only
@@ -284,7 +318,7 @@ export const updateCandidateStatus = async (req, res) => {
 // ── GET /api/resumes/export/:jobId ────────────────────────────────────────
 // Streams a CSV of all shortlisted candidates for a job (FR-29)
 // Access: Private — Employer only
-export const exportShortlist = async (req, res) => {
+export const exportShortlistedCandidates = async (req, res) => {
     try {
         const { jobId } = req.params;
 
@@ -359,6 +393,37 @@ export const exportShortlist = async (req, res) => {
     }
 };
 
+export const getCandidateApplications =
+async (req, res) => {
+  try {
+
+    const resumes =
+      await Resume.find({
+        email: req.user.email,
+      })
+      .populate(
+        "job_id",
+        "title company description required_skills status"
+      )
+      .sort({
+        createdAt: -1,
+      });
+
+    return res.status(200).json({
+      success: true,
+      count: resumes.length,
+      data: resumes,
+    });
+  }
+
+  catch(error){
+    return res.status(500).json({
+      success:false,
+      message:error.message,
+    });
+  }
+
+};
 
 // ── GET /api/resumes/candidate ────────────────────────────────────────────
 // Returns all resumes matching the authenticated candidate's email address.
@@ -402,5 +467,96 @@ export const getResumesByCandidate = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// ───────────────────────────────────────────────────────────────
+// POST /api/resumes/rescreen/:jobId
+// Re-run Gemini AI Screening
+// ───────────────────────────────────────────────────────────────
+
+export const rerunAIScreening = async (req, res) => {
+    const { jobId } = req.params;
+    try {
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                message: "Job not found.",
+            });
+        }
+        if (job.employer_id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized.",
+            });
+        }
+        const resumes = await Resume.find({
+            job_id: jobId,
+        });
+        if (!resumes.length) {
+            return res.status(404).json({
+                success: false,
+                message: "No resumes found.",
+            });
+        }
+        let updated = 0;
+        for (const resume of resumes) {
+            try {
+                const geminiResult = await scoreResume(
+                    job,
+                    resume.raw_text
+                );
+                resume.candidate_name =
+                    geminiResult.candidate_name || "";
+                resume.email =
+                    geminiResult.email || "";
+                resume.match_score =
+                    geminiResult.match_score ?? null;
+                resume.matched_skills =
+                    geminiResult.matched_skills || [];
+                resume.missing_skills =
+                    geminiResult.missing_skills || [];
+                resume.experience_years =
+                    geminiResult.experience_years ?? null;
+                resume.education =
+                    geminiResult.education || "";
+                resume.organizations =
+                    geminiResult.organizations || [];
+                resume.explanation =
+                    geminiResult.explanation || "";
+                resume.bias_flags =
+                    geminiResult.bias_flags || [];
+                resume.processing_status = "scored";
+                resume.gemini_response =
+                    geminiResult;
+                resume.scored_at =
+                    new Date();
+                await resume.save();
+                updated++;
+            }
+            catch (err) {
+                console.error(
+                    `Failed to rescore ${resume.original_name}`,
+                    err.message
+                );
+                resume.processing_status = "failed";
+                await resume.save();
+            }
+        }
+        await rankResumesForJob(jobId);
+        return res.json({
+            success: true,
+            message: `AI screening completed.`,
+            rescored: updated,
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+
     }
 };
