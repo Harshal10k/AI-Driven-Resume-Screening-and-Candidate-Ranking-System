@@ -32,14 +32,6 @@ const ProtectedRoute = ({
       user.role
     )
   ) {
-    if(user.role === "admin"){
-      return (
-        <Navigate
-          to="/admin"
-          replace
-        />
-      );
-    }
     if(user.role === "employer"){
       return (
         <Navigate

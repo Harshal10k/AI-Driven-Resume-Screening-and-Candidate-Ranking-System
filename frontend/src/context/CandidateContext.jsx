@@ -3,11 +3,14 @@ import {
   useContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import {
   getMyApplications,
 } from "../services/candidateService";
+
+import { useAuth } from "./AuthContext";
 
 const CandidateContext = createContext();
 
@@ -15,8 +18,9 @@ export const CandidateProvider = ({ children }) => {
 
   const [applications,setApplications] = useState([]);
   const [loading,setLoading] = useState(false);
+  const { token, user } = useAuth();
 
-  const fetchApplications = async()=>{
+  const fetchApplications = useCallback(async()=>{
     try{
 
       setLoading(true);
@@ -39,26 +43,17 @@ export const CandidateProvider = ({ children }) => {
       setLoading(false);
   }
 
-  };
+  });
 
-  useEffect(()=>{
+  useEffect(() => {
 
-    const token =
-    localStorage.getItem(
-    "token"
-    );
+    if (!token) return;
 
-    const user =
-    JSON.parse(
-    localStorage.getItem("user")
-    );
+    if (user?.role !== "candidate") return;
 
-    if(token && user?.role === "candidate"){
+    fetchApplications();
 
-      fetchApplications();
-    }
-
-  },[]);
+  }, [token, user]);
 
   return(
 
