@@ -20,13 +20,6 @@ import Jobs from "../pages/Jobs";
 import Analytics from "../pages/Analytics";
 import Settings from "../pages/Settings";
 
-// ================= ADMIN PAGES =================
-
-import AdminDashboard from "../pages/AdminDashboard";
-import EmployerManagement from "../pages/EmployerManagement";
-import CandidateManagement from "../pages/CandidateManagement";
-import AdminSettings from "../pages/AdminSettings";
-
 // ================= CANDIDATE PAGES =================
 
 import CandidateDashboard from "../pages/CandidateDashboard";
@@ -121,46 +114,6 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={["candidate"]}>
               <CandidateSettings />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* =====================
-             ADMIN ROUTES
-        ===================== */}
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/employers"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <EmployerManagement />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/candidates"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <CandidateManagement />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/settings"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <AdminSettings />
             </ProtectedRoute>
           }
         />
