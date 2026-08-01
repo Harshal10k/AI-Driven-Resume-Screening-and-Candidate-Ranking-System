@@ -48,28 +48,17 @@ resumeRouter.post(
 // GET /api/resumes/candidate/applications
 // ==============================
 
-resumeRouter.get(
-    "/candidate/applications",
-    authorizeRoles("candidate"),
-    getCandidateApplications
-);
+resumeRouter.get("/candidate/applications", authorizeRoles("candidate"), getCandidateApplications);
 
 // GET /api/resumes/export/:jobId — download CSV of shortlisted candidates
 resumeRouter.get("/export/:jobId", authorizeRoles("employer"), exportShortlist);
 
 // ==============================
-// Get All Ranked Resumes
-// GET /api/resumes
+// Re-run AI Screening
+// POST /api/resumes/rescreen/:jobId
 // ==============================
 
-resumeRouter.get(
-    "/",
-    authorizeRoles("employer"),
-    getAllResumes
-);
-
-// GET /api/resumes/:jobId — ranked candidates for a job
-resumeRouter.get("/:jobId", authorizeRoles("employer"), getResumesByJob);
+resumeRouter.post("/rescreen/:jobId", authorizeRoles("employer"), rerunAIScreening);
 
 // PATCH /api/resumes/:id/status — shortlist or reject
 resumeRouter.patch(
@@ -84,16 +73,19 @@ resumeRouter.patch(
     updateCandidateStatus
 );
 
-
 // ==============================
-// Re-run AI Screening
-// POST /api/resumes/rescreen/:jobId
+// Get All Ranked Resumes
+// GET /api/resumes
 // ==============================
 
-resumeRouter.post(
-    "/rescreen/:jobId",
-    authorizeRoles("employer"),
-    rerunAIScreening
-);
+resumeRouter.get("/", authorizeRoles("employer"), getAllResumes);
+
+// GET /api/resumes/:jobId — ranked candidates for a job
+resumeRouter.get("/:jobId", authorizeRoles("employer"), getResumesByJob);
+
+
+
+
+
 
 export default resumeRouter;

@@ -6,7 +6,7 @@ import authRouter from './routes/authRoutes.js';
 import cors from 'cors';
 import jobRouter from './routes/JobRoutes.js';
 import resumeRouter from './routes/resumeRoutes.js';
-import candidateRoutes from "./routes/candidateRoutes.js";
+
 
 dotenv.config();
 connectDB();
@@ -21,7 +21,7 @@ app.use("/uploads", express.static("uploads"));
 app.use('/api/auth', authRouter);
 app.use('/api/jobs', jobRouter);
 app.use('/api/resumes', resumeRouter);
-app.use("/api/candidate",candidateRoutes);
+
 
 app.get('/', (req, res) => {
     res.send('API is running...');

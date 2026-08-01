@@ -124,37 +124,6 @@ export const getAllJobs = async (req, res) => {
   }
 };
 
-// ==========================================
-// NEW API
-// Get All Open Jobs
-// GET /api/jobs/open
-// Private (Candidate / Employer)
-// ==========================================
-
-export const getOpenJobs = async (req, res) => {
-  try {
-    const jobs = await Job.find({
-      status: "open",
-    })
-      .select(
-        "title company description required_skills experience_years hr_email status createdAt"
-      )
-      .sort({
-        createdAt: -1,
-      });
-
-    return res.status(200).json({
-      success: true,
-      count: jobs.length,
-      data: jobs,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 //@route GET /api/jobs/:id
 //@access Private (Employer Only)

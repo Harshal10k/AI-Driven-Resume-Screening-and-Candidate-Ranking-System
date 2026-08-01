@@ -1,23 +1,12 @@
 import express from "express";
 import { body } from "express-validator";
-import { createJob, getAllJobs, getJobById, getOpenJobs, updateJob, updateJobStatus, deleteJob } from "../controllers/jobController.js";
+import { createJob, getAllJobs, getJobById, updateJob, updateJobStatus, deleteJob } from "../controllers/jobController.js";
 import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import validateRequest from "../middleware/validateRequest.js";
 
 const jobRouter = express.Router();
 
 jobRouter.use(protect);
-
-// GET OPEN JOBS
-
-jobRouter.get(
-  "/open",
-  authorizeRoles(
-    "candidate",
-    "employer",
-  ),
-  getOpenJobs
-);
 
 jobRouter.post(
     "/",
@@ -32,6 +21,7 @@ jobRouter.post(
     authorizeRoles("employer"), 
     createJob
 )
+
 
 //get all jobs
 jobRouter.get("/", authorizeRoles("employer"), getAllJobs);
