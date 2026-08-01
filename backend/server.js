@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRouter from './routes/authRoutes.js';
 import cors from 'cors';
-import jobRouter from './routes/JobRoutes.js';
+import jobRouter from './routes/Jobroutes.js';
 import resumeRouter from './routes/resumeRoutes.js';
 
 
