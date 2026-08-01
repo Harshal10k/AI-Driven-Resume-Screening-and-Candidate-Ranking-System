@@ -240,12 +240,20 @@ const filteredCandidates =
               <HeroSection
                 averageScore={averageScore}
                 loading={loading}
-                onExport={() =>
-                    exportCandidates(selectedJob?._id)
+                onExport={() => {
+                    if (!selectedJob || selectedJob._id === "all") {
+                        alert("Please select a specific job before exporting.");
+                        return;
+                        }
+                    exportCandidates(selectedJob._id);
+                }}
+                onRescreen={() => {
+                if (!selectedJob || selectedJob._id === "all") {
+                    alert("Please select a specific job before re-running AI screening.");
+                    return;
                 }
-                onRescreen={() =>
-                    rerunAI(selectedJob?._id)
-                }
+                rerunAI(selectedJob._id);
+                }}
               />
 
               <StatsGrid
