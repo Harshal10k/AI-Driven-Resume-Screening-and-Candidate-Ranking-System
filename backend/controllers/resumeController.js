@@ -7,6 +7,7 @@ import { extractText } from "../services/pdfService.js";
 import { rankResumesForJob } from "../services/rankingService.js";
 import { scoreResume } from "../services/geminiService.js";
 import { sendStatusEmail } from "../services/emailService.js";
+import mongoose from "mongoose";
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -320,8 +321,14 @@ export const updateCandidateStatus = async (req, res) => {
 // Access: Private — Employer only
 export const exportShortlist = async (req, res) => {
     try {
-        
         const { jobId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(jobId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select a specific job before exporting.",
+            });
+        }
 
         const job = await Job.findById(jobId);
         if (!job) {
@@ -354,8 +361,6 @@ export const exportShortlist = async (req, res) => {
             "Original Filename",
         ];
 
-        // Escape a single CSV field: wrap in quotes if it contains a comma,
-        // quote, or newline; double any internal quotes.
         const escapeCsv = (value) => {
             const str = value === null || value === undefined ? "" : String(value);
             if (/[",\n]/.test(str)) {
@@ -379,7 +384,6 @@ export const exportShortlist = async (req, res) => {
             r.original_name || "",
         ]);
 
-        // AC-07 requires: empty CSV with headers only if no shortlisted candidates
         const csvLines = [headers, ...rows].map((row) => row.map(escapeCsv).join(","));
         const csvContent = csvLines.join("\r\n");
 
