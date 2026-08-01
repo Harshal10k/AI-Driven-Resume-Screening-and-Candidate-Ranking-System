@@ -3,10 +3,10 @@ import path from "path";
 import { fileTypeFromFile } from "file-type";
 import Job from "../models/Job.js";
 import Resume from "../models/Resume.js";
-import { extractText } from "../services/pdfService.js";
-import { rankResumesForJob } from "../services/rankingService.js";
-import { scoreResume } from "../services/geminiService.js";
-import { sendStatusEmail } from "../services/emailService.js";
+import { extractText } from "../Services/pdfService.js";
+import { rankResumesForJob } from "../Services/rankingService.js";
+import { scoreResume } from "../Services/geminiService.js";
+import { sendStatusEmail } from "../Services/emailService.js";
 import mongoose from "mongoose";
 
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
