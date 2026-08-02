@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-const API_URL = `${BASE_URL}/api/jobs`;
+const API_URL = `${BASE_URL}/api/resumes`;
 
 // ==========================
 // Authorization Config
@@ -31,7 +31,7 @@ const getAuthConfig = () => {
 const handleApiError = (error) => {
 
   console.error(
-    "Job API Error:",
+    "Resume API Error:",
     error
   );
 
@@ -40,17 +40,55 @@ const handleApiError = (error) => {
 };
 
 // ==========================
-// Get Employer Jobs
+// Upload Resumes
 // ==========================
 
-export const getJobs = async () => {
+export const uploadResumes = async (
+  jobId,
+  files
+) => {
 
   try {
 
+    const formData =
+      new FormData();
+
+    Array.from(files).forEach(
+      (file) => {
+
+        formData.append(
+          "resumes",
+          file
+        );
+
+      }
+    );
+
+    const config =
+      getAuthConfig();
+
     const response =
-      await axios.get(
-        API_URL,
-        getAuthConfig()
+      await axios.post(
+
+        `${API_URL}/upload/${jobId}`,
+
+        formData,
+
+        {
+
+          ...config,
+
+          headers: {
+
+            ...config.headers,
+
+            "Content-Type":
+              "multipart/form-data",
+
+          },
+
+        }
+
       );
 
     return response.data;
@@ -64,18 +102,21 @@ export const getJobs = async () => {
 };
 
 // ==========================
-// Get All Open Jobs
+// Get Resumes By Job
 // ==========================
 
-export const getOpenJobs =
-  async () => {
+export const getResumesByJob =
+  async (jobId) => {
 
     try {
 
       const response =
         await axios.get(
-          `${API_URL}/open`,
+
+          `${API_URL}/${jobId}`,
+
           getAuthConfig()
+
         );
 
       return response.data;
@@ -89,96 +130,30 @@ export const getOpenJobs =
   };
 
 // ==========================
-// Get Single Job
+// Get All Resumes
 // ==========================
 
-export const getJobById =
-  async (id) => {
-
-    try {
-
-      const response =
-        await axios.get(
-          `${API_URL}/${id}`,
-          getAuthConfig()
-        );
-
-      return response.data;
-
-    } catch (error) {
-
-      handleApiError(error);
-
-    }
-
-  };
+export const getAllResumes = async () => {
+  try {
+    const response =
+      await axios.get(
+        API_URL,
+        getAuthConfig()
+      );
+    return response.data;
+  }
+  catch (error) {
+    handleApiError(error);
+  }
+};
 
 // ==========================
-// Create Job
+// Update Candidate Status
 // ==========================
 
-export const createJob =
-  async (jobData) => {
-
-    try {
-
-      const response =
-        await axios.post(
-          API_URL,
-          jobData,
-          getAuthConfig()
-        );
-
-      return response.data;
-
-    } catch (error) {
-
-      handleApiError(error);
-
-    }
-
-  };
-
-// ==========================
-// Update Job
-// ==========================
-
-export const updateJob =
+export const updateCandidateStatus =
   async (
-    id,
-    jobData
-  ) => {
-
-    try {
-
-      const response =
-        await axios.put(
-
-          `${API_URL}/${id}`,
-
-          jobData,
-
-          getAuthConfig()
-
-        );
-
-      return response.data;
-
-    } catch (error) {
-
-      handleApiError(error);
-
-    }
-
-  };
-
-// ==========================
-// Update Job Status
-// ==========================
-
-export const updateJobStatus =
-  async (
-    id,
+    resumeId,
     status
   ) => {
 
@@ -187,10 +162,12 @@ export const updateJobStatus =
       const response =
         await axios.patch(
 
-          `${API_URL}/${id}/status`,
+          `${API_URL}/${resumeId}/status`,
 
           {
+
             status,
+
           },
 
           getAuthConfig()
@@ -208,24 +185,60 @@ export const updateJobStatus =
   };
 
 // ==========================
-// Delete Job
+// Export Shortlisted Candidates
 // ==========================
 
-export const deleteJob =
-  async (id) => {
+export const exportShortlist =
+  async (jobId) => {
 
     try {
 
       const response =
-        await axios.delete(
+        await axios.get(
 
-          `${API_URL}/${id}`,
+          `${API_URL}/export/${jobId}`,
 
-          getAuthConfig()
+          {
+
+            ...getAuthConfig(),
+
+            responseType: "blob",
+
+          }
 
         );
 
-      return response.data;
+      const blob = new Blob(
+        [response.data],
+        {
+          type: "text/csv",
+        }
+      );
+
+      const url =
+        window.URL.createObjectURL(
+          blob
+        );
+
+      const link =
+        document.createElement("a");
+
+      link.href = url;
+
+      link.download =
+        "shortlisted_candidates.csv";
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      link.remove();
+
+      window.URL.revokeObjectURL(
+        url
+      );
 
     } catch (error) {
 
@@ -236,46 +249,54 @@ export const deleteJob =
   };
 
 // ==========================
-// Duplicate Job
+// Re-run AI Screening
 // ==========================
 
-export const duplicateJob =
-  async (job) => {
+export const rerunAIScreening = async (jobId) => {
 
-    try {
+  try {
 
-      const duplicatedJob = {
+    const response = await axios.post(
 
-        ...job,
+      `${API_URL}/rescreen/${jobId}`,
 
-        title:
-          `${job.title} (Copy)`,
+      {},
 
-      };
+      getAuthConfig()
 
-      delete duplicatedJob._id;
-      delete duplicatedJob.createdAt;
-      delete duplicatedJob.updatedAt;
-      delete duplicatedJob.summary;
-      delete duplicatedJob.__v;
+    );
 
-      const response =
-        await axios.post(
+    return response.data;
 
-          API_URL,
+  }
 
-          duplicatedJob,
+  catch (error) {
 
-          getAuthConfig()
+    handleApiError(error);
 
-        );
+  }
 
-      return response.data;
+};
 
-    } catch (error) {
+/*
+==================================================
 
-      handleApiError(error);
+Future APIs
 
-    }
+==================================================
 
-  };
+// Export Shortlisted Candidates
+
+export const exportShortlisted =
+async (jobId) => {
+
+};
+
+// Download Resume
+
+export const downloadResume =
+async (resumeId) => {
+
+};
+
+*/
